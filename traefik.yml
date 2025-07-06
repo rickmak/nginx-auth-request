@@ -1,0 +1,14 @@
+entryPoints:
+  web:
+    address: ":80"
+
+http:
+  middlewares:
+    error401:
+      errors:
+        status:
+          - "401"
+        query: "Authentication failed: Invalid or missing x-pretest header"
+
+api:
+  insecure: true
