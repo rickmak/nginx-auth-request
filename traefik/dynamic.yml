@@ -1,0 +1,35 @@
+# all options: https://doc.traefik.io/traefik/reference/routing-configuration/other-providers/file/
+http:
+  services:
+    auth-service:
+      loadBalancer:
+        servers:
+          - url: "http://auth:5000"
+
+  middlewares:
+    header-cleanup:
+      headers:
+        # https://doc.traefik.io/traefik/reference/routing-configuration/http/middlewares/headers/
+        customRequestHeaders:
+          Content-Length: ""
+          # note Traefik does not have built-in variable for original request URI like Nginx's $request_uri
+          # so we will use X-Forwarded-Uri added by 'trustForwardHeader' below
+    
+    # This replaces 'auth_request /auth' in Nginx
+    auth-middleware:
+      forwardAuth:
+        # https://doc.traefik.io/traefik/reference/routing-configuration/http/middlewares/forwardauth/
+        address: "http://auth:5000/auth"
+        forwardBody: false
+        trustForwardHeader: true  # this adds X-Forwarded-* headers, specifically X-Forwarded-Uri
+
+  # the rules
+  routers:
+    app-router:
+      rule: "PathPrefix(`/`)" # 'location /' in Nginx
+      entryPoints:
+        - "web"
+      service: "auth-service"
+      middlewares:  # apply both
+        - "header-cleanup"
+        - "auth-middleware"
